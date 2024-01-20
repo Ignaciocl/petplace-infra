@@ -22,6 +22,16 @@ variable "vpc_cidr" {
   default = ["10.0.101.0/24", "10.0.102.0/24"]
 }
 
+variable "amount_of_tasks" {
+  default = 1
+  description = "This is to set the amount of tasks you wish running, pro tip, set as 0 to not pay fargate"
+}
+
+variable "use_nat" {
+  default = true
+  description = "set to false to not pay that shit, also use in combination with fargate"
+}
+
 variable "region" {
   default = "us-east-2"
 }

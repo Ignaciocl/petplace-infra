@@ -6,7 +6,6 @@ resource "aws_lb" "main" {
   subnets                    = module.vpc.public_subnets
   enable_deletion_protection = false
   security_groups = [aws_security_group.https.id]
-
 }
 
 resource "aws_alb_target_group" "main" {
@@ -46,7 +45,6 @@ resource "aws_alb_listener" "http" {
   }
 }
 
-
 resource "aws_alb_listener" "https" {
   load_balancer_arn = aws_lb.main.arn
 
@@ -61,3 +59,18 @@ resource "aws_alb_listener" "https" {
     target_group_arn = aws_alb_target_group.main.arn
   }
 }
+
+
+resource "aws_alb_listener_rule" "main"{
+  listener_arn = aws_alb_listener.https.arn
+  action {
+    type = "forward"
+    target_group_arn = aws_alb_target_group.main.arn
+  }
+  condition {
+    path_pattern {
+      values = ["/treatments/*"]
+    }
+  }
+}
+

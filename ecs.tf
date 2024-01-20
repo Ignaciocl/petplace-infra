@@ -17,7 +17,7 @@ resource "aws_ecs_service" "drugs-service" {
     container_name   = "drugs"
     container_port   = var.container_port
   }
-  desired_count = 1
+  desired_count = var.amount_of_tasks
 }
 
 resource "aws_ecs_task_definition" "drugs-task-definition" {
@@ -147,4 +147,118 @@ EOF
 resource "aws_iam_role_policy_attachment" "ecs-task-execution-role-policy-attachment" {
   role       = aws_iam_role.ecs_task_execution_role.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+}
+
+resource "aws_ecs_service" "telegram-service" {
+  name            = "telegram"
+  cluster         = aws_ecs_cluster.pet-place-cluster.id
+  task_definition = aws_ecs_task_definition.telegram-task-definition.arn
+  launch_type     = "FARGATE"
+  network_configuration {
+    subnets          = module.vpc.private_subnets
+    security_groups  = [aws_security_group.https-fargate.id]
+    assign_public_ip = true // true for now
+  }
+  load_balancer {
+    target_group_arn = aws_alb_target_group.main.id
+    container_name   = "telegram"
+    container_port   = var.container_port
+  }
+  desired_count = var.amount_of_tasks
+}
+
+resource "aws_ecs_task_definition" "telegram-task-definition" {
+  family                   = "ecs-task-definition-telegram"
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  memory                   = "512"
+  cpu                      = "256"
+  execution_role_arn       = aws_iam_role.ecs_task_role.arn
+  task_role_arn            = aws_iam_role.ecs_task_execution_role.arn
+  container_definitions    = jsonencode([
+    {
+      name             = "telegram"
+      image            = "058264238248.dkr.ecr.${var.region}.amazonaws.com/${aws_ecr_repository.telegram-repository.name}:latest"
+      essential        = true
+      logConfiguration = {
+        logDriver = "awslogs",
+        "options" : {
+          "awslogs-create-group" : "true",
+          "awslogs-group" : aws_cloudwatch_log_group.groupForEcs.id,
+          "awslogs-region" : var.region,
+          "awslogs-stream-prefix" : "awslogs-drugs",
+        }
+      },
+      portMappings = [
+        {
+          protocol      = "tcp"
+          containerPort = var.container_port
+          hostPort      = var.container_port
+        }
+      ]
+      environmentFiles : [
+        {
+          "value" : "arn:aws:s3:::${aws_s3_bucket.envBucket.bucket}/telegramEnvFile.env",
+          "type" : "s3"
+        }
+      ]
+    }
+  ])
+}
+
+resource "aws_ecs_service" "pets-service" {
+  name            = "pets"
+  cluster         = aws_ecs_cluster.pet-place-cluster.id
+  task_definition = aws_ecs_task_definition.pets-task-definition.arn
+  launch_type     = "FARGATE"
+  network_configuration {
+    subnets          = module.vpc.private_subnets
+    security_groups  = [aws_security_group.https-fargate.id]
+    assign_public_ip = true // true for now
+  }
+  load_balancer {
+    target_group_arn = "arn:aws:elasticloadbalancing:us-east-2:058264238248:targetgroup/sneaky-tg/bfd770111fed12b6"
+    container_name   = "pets"
+    container_port   = var.container_port
+  }
+  desired_count = var.amount_of_tasks
+}
+
+resource "aws_ecs_task_definition" "pets-task-definition" {
+  family                   = "ecs-task-definition-pets"
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  memory                   = "512"
+  cpu                      = "256"
+  execution_role_arn       = aws_iam_role.ecs_task_role.arn
+  task_role_arn            = aws_iam_role.ecs_task_execution_role.arn
+  container_definitions    = jsonencode([
+    {
+      name             = "pets"
+      image            = "058264238248.dkr.ecr.${var.region}.amazonaws.com/${aws_ecr_repository.pets-repository.name}:latest"
+      essential        = true
+      logConfiguration = {
+        logDriver = "awslogs",
+        "options" : {
+          "awslogs-create-group" : "true",
+          "awslogs-group" : aws_cloudwatch_log_group.groupForEcs.id,
+          "awslogs-region" : var.region,
+          "awslogs-stream-prefix" : "awslogs-drugs",
+        }
+      },
+      portMappings = [
+        {
+          protocol      = "tcp"
+          containerPort = var.container_port
+          hostPort      = var.container_port
+        }
+      ]
+      environmentFiles : [
+        {
+          "value" : "arn:aws:s3:::${aws_s3_bucket.envBucket.bucket}/drugsEnvFile.env",
+          "type" : "s3"
+        }
+      ]
+    }
+  ])
 }

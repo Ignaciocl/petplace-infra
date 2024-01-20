@@ -12,8 +12,8 @@ module "vpc" {
   create_igw = true
 
   enable_dynamodb_endpoint = true
-  enable_nat_gateway = true
-  single_nat_gateway = true
+  enable_nat_gateway = var.use_nat
+  single_nat_gateway = var.use_nat
 
   tags = {
     Terraform = "true"
