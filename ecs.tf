@@ -159,11 +159,6 @@ resource "aws_ecs_service" "telegram-service" {
     security_groups  = [aws_security_group.https-fargate.id]
     assign_public_ip = true // true for now
   }
-  load_balancer {
-    target_group_arn = aws_alb_target_group.main.id
-    container_name   = "telegram"
-    container_port   = var.container_port
-  }
   desired_count = var.amount_of_tasks
 }
 

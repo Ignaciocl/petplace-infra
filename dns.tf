@@ -32,3 +32,18 @@ resource "aws_route53_record" "api_url" {
   allow_overwrite = true
 
 }
+
+resource "aws_route53_record" "frontend" {
+
+  zone_id = data.aws_route53_zone.petplace.zone_id
+  name    = "lnt.digital"
+  type    = "A"
+
+  alias {
+    name                   = aws_cloudfront_distribution.frontend.domain_name
+    zone_id                = aws_cloudfront_distribution.frontend.hosted_zone_id
+    evaluate_target_health = true
+  }
+
+  allow_overwrite = true
+}
