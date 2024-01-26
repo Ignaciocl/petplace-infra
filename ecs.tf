@@ -257,3 +257,60 @@ resource "aws_ecs_task_definition" "pets-task-definition" {
     }
   ])
 }
+
+resource "aws_ecs_service" "users-service" {
+  name            = "users"
+  cluster         = aws_ecs_cluster.pet-place-cluster.id
+  task_definition = aws_ecs_task_definition.users-task-definition.arn
+  launch_type     = "FARGATE"
+  network_configuration {
+    subnets          = module.vpc.private_subnets
+    security_groups  = [aws_security_group.https-fargate.id]
+    assign_public_ip = true // true for now
+  }
+  load_balancer {
+    target_group_arn = aws_alb_target_group.users.id
+    container_name   = "users"
+    container_port   = var.container_port
+  }
+  desired_count = var.amount_of_tasks
+}
+
+resource "aws_ecs_task_definition" "users-task-definition" {
+  family                   = "ecs-task-definition-users"
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  memory                   = "512"
+  cpu                      = "256"
+  execution_role_arn       = aws_iam_role.ecs_task_role.arn
+  task_role_arn            = aws_iam_role.ecs_task_execution_role.arn
+  container_definitions    = jsonencode([
+    {
+      name             = "users"
+      image            = "058264238248.dkr.ecr.${var.region}.amazonaws.com/${aws_ecr_repository.users-repository.name}:latest"
+      essential        = true
+      logConfiguration = {
+        logDriver = "awslogs",
+        "options" : {
+          "awslogs-create-group" : "true",
+          "awslogs-group" : aws_cloudwatch_log_group.groupForEcs.id,
+          "awslogs-region" : var.region,
+          "awslogs-stream-prefix" : "awslogs-drugs",
+        }
+      },
+      portMappings = [
+        {
+          protocol      = "tcp"
+          containerPort = var.container_port
+          hostPort      = var.container_port
+        }
+      ]
+      environmentFiles : [
+        {
+          "value" : "arn:aws:s3:::${aws_s3_bucket.envBucket.bucket}/drugsEnvFile.env",
+          "type" : "s3"
+        }
+      ]
+    }
+  ])
+}
