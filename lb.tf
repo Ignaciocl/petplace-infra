@@ -40,7 +40,7 @@ resource "aws_alb_target_group" "users" {
     healthy_threshold   = "3"
     interval            = "30"
     protocol            = "HTTP"
-    matcher             = "404"
+    matcher             = "200"
     timeout             = "3"
     path                = "/"
     unhealthy_threshold = "2"
@@ -118,7 +118,7 @@ resource "aws_alb_listener_rule" "user"{
   }
   condition {
     path_pattern {
-      values = ["/user/*"]
+      values = ["/users/*"]
     }
   }
 }
