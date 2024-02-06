@@ -23,5 +23,5 @@ resource "aws_db_instance" "rds" {
   publicly_accessible    = true
   vpc_security_group_ids = [aws_security_group.rds.id]
   username               = "lichaNoVeasEsto"
-  password               = "testPassword"
+  password               = "newUltraPassword"
 }
