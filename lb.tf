@@ -77,7 +77,7 @@ resource "aws_alb_listener" "https" {
 
   default_action {
     type             = "forward"
-    target_group_arn = aws_alb_target_group.main.arn
+    target_group_arn = aws_alb_target_group.users.arn
   }
 }
 
@@ -95,7 +95,6 @@ resource "aws_alb_listener" "users" {
     target_group_arn = aws_alb_target_group.users.arn
   }
 }
-
 
 resource "aws_alb_listener_rule" "main"{
   listener_arn = aws_alb_listener.https.arn
@@ -122,5 +121,3 @@ resource "aws_alb_listener_rule" "user"{
     }
   }
 }
-
-
